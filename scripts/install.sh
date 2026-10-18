@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# LogPulse CLI - Linux & Unix Automated Installation Script
+# LogPulse CLI - Linux & WSL Automated Installation Script
 # Configures C module compilation, virtual environment, and CLI registration.
 # ==============================================================================
 
@@ -15,7 +15,7 @@ RESET="\033[0m"
 
 echo -e "${BOLD}${CYAN}"
 echo "=========================================================="
-echo "         LogPulse CLI Enterprise Installer (Linux)        "
+echo "         LogPulse CLI Enterprise Installer (Linux/WSL)    "
 echo "=========================================================="
 echo -e "${RESET}"
 
@@ -53,24 +53,66 @@ else
     echo -e "${YELLOW}    LogPulse CLI will operate in High-Performance Python Fallback mode.${RESET}"
 fi
 
-# 3. Install Python Dependencies & Package
-echo -e "\n${CYAN}>>> Installing Python Dependencies & Registering CLI...${RESET}"
-$PYTHON_BIN -m pip install --upgrade pip
-$PYTHON_BIN -m pip install -r requirements.txt
-$PYTHON_BIN -m pip install -e .
+# 3. Check for Python Pip / Dependencies
+echo -e "\n${CYAN}>>> Verifying Python Dependencies...${RESET}"
+HAS_PIP=true
+if ! $PYTHON_BIN -m pip --version &>/dev/null; then
+    HAS_PIP=false
+fi
 
-# 4. Verify Installation & Run Diagnostic
+# Check if required modules already exist in system Python (common in Ubuntu WSL)
+HAS_DEPS=true
+if ! $PYTHON_BIN -c "import jinja2, rich, markdown_it, yaml" &>/dev/null; then
+    HAS_DEPS=false
+fi
+
+if [ "$HAS_PIP" = true ]; then
+    echo -e "${GREEN}[+] pip detected.${RESET}"
+    # Try install with fallback for PEP 668 externally-managed environments
+    $PYTHON_BIN -m pip install -r requirements.txt 2>/dev/null || $PYTHON_BIN -m pip install -r requirements.txt --break-system-packages 2>/dev/null || true
+    $PYTHON_BIN -m pip install -e . 2>/dev/null || $PYTHON_BIN -m pip install -e . --break-system-packages 2>/dev/null || true
+elif [ "$HAS_DEPS" = true ]; then
+    echo -e "${GREEN}[+] Required packages (jinja2, rich, markdown_it, yaml) are already present in Ubuntu Python!${RESET}"
+else
+    echo -e "${YELLOW}[!] pip is not installed on this Linux/WSL distribution.${RESET}"
+    echo -e "${YELLOW}    To install pip and venv, run:${RESET}"
+    echo -e "    ${BOLD}sudo apt update && sudo apt install -y python3-pip python3-venv${RESET}\n"
+fi
+
+# 4. Create convenient standalone binary wrapper in ~/.local/bin/logpulse
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+mkdir -p "$HOME/.local/bin"
+cat << 'EOF' > "$HOME/.local/bin/logpulse"
+#!/usr/bin/env bash
+PYTHON_CMD="python3"
+if ! command -v python3 &>/dev/null; then
+    PYTHON_CMD="python"
+fi
+exec $PYTHON_CMD -m src.core.cli "$@"
+EOF
+chmod +x "$HOME/.local/bin/logpulse"
+
+# Ensure ~/.local/bin is in PATH for future sessions
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
+# 5. Verify Installation & Run Diagnostic
 echo -e "\n${CYAN}>>> Running LogPulse CLI Self-Test...${RESET}"
+cd "$PROJECT_DIR"
 $PYTHON_BIN -m src.core.cli status
 
 echo -e "${BOLD}${GREEN}"
 echo "=========================================================="
-echo "[SUCCESS] LogPulse CLI successfully installed!"
+echo "[SUCCESS] LogPulse CLI is ready in Linux / WSL!"
 echo "=========================================================="
 echo -e "${RESET}"
-echo -e "You can now execute commands directly:"
-echo -e "  ${CYAN}logpulse status${RESET}         - Inspect C acceleration & diagnostic"
-echo -e "  ${CYAN}logpulse build-docs${RESET}     - Build Markdown SOPs to static web portal"
-echo -e "  ${CYAN}logpulse audit-logs${RESET}     - Run functional log audit & HTML dashboard"
-echo -e "  ${CYAN}logpulse pipeline${RESET}       - Execute end-to-end documentation & audit"
+echo -e "You can execute commands directly:"
+echo -e "  ${CYAN}python3 -m src.core.cli status${RESET}      - Inspect diagnostic & C acceleration"
+echo -e "  ${CYAN}python3 -m src.core.cli build-docs${RESET}  - Build Markdown SOPs to static HTML portal"
+echo -e "  ${CYAN}python3 -m src.core.cli audit-logs${RESET}  - Run log audit & HTML dashboard"
+echo -e "  ${CYAN}python3 -m src.core.cli pipeline${RESET}    - Execute full end-to-end pipeline"
+echo ""
+echo -e "Or using the registered binary wrapper:"
+echo -e "  ${CYAN}~/.local/bin/logpulse pipeline${RESET} (or simply ${CYAN}logpulse pipeline${RESET})"
 echo ""
