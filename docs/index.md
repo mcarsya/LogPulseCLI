@@ -41,3 +41,4 @@ LogPulse CLI integrates multi-language high-performance tooling:
 - **C Memory-Managed Engine**: Scans gigabyte-scale access and error logs with zero memory leaks.
 - **Python OOP SSG**: Assembles document hierarchies using N-ary Trees and DFS/BFS algorithms.
 - **Functional Analytics**: Aggregates time-series metrics via pure functions (`map`, `filter`, `reduce`).
+

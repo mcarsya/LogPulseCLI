@@ -57,3 +57,4 @@ kubectl debug pod/<pod-name> -n production -it --image=nicolaka/netshoot
 If recovery is not achieved within **15 minutes**:
 1. Page the Secondary On-Call SRE.
 2. Divert upstream edge traffic via Cloudflare / Envoy to fallback static maintenance page.
+

@@ -1,333 +1,234 @@
-# ⚡ LogPulse CLI
+# LogPulse
 
-> **Enterprise SOP Static Site Generator & Memory-Managed Log Audit Engine**  
-> *Combining Python, C (Manual Memory Management), Linux, Git, OOP, Functional Programming, and Data Structures & Algorithms.*
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+[![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)]()
+[![C Standard](https://img.shields.io/badge/c-c11-00599C.svg)]()
+[![License](https://img.shields.io/badge/license-MIT-green.svg)]()
+[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20wsl%20%7C%20macos%20%7C%20windows-lightgrey.svg)]()
 
----
-
-## 📋 Daftar Isi
-
-1. [Ringkasan & Tujuan Proyek](#-ringkasan--tujuan-proyek)
-2. [Arsitektur Sistem & Spesifikasi Teknis](#-arsitektur-sistem--spesifikasi-teknis)
-   - [1. Multi-Language Module (Python & C Memory Management)](#1-multi-language-module-python--c-memory-management)
-   - [2. Static Site Generator (OOP & Data Structures)](#2-static-site-generator-oop--data-structures)
-   - [3. Log Audit & Analytics Engine (Functional Programming)](#3-log-audit--analytics-engine-functional-programming)
-3. [Struktur Direktori Proyek](#-struktur-direktori-proyek)
-4. [Instalasi & Otomatisasi](#-instalasi--otomatisasi)
-   - [Linux / macOS (Bash)](#opsi-a-linux--macos-bash)
-   - [Windows (PowerShell / Command Prompt)](#opsi-b-windows-powershell)
-   - [Makefile Automation](#opsi-c-menggunakan-makefile)
-5. [Panduan Penggunaan CLI](#-panduan-penggunaan-cli)
-6. [Kompilasi Modul C (Manual Memory Management)](#-kompilasi-modul-c-manual-memory-management)
-7. [Pengujian Unit (Unit Testing)](#-pengujian-unit-unit-testing)
-8. [Lisensi & Kontribusi](#-lisensi--kontribusi)
+**LogPulse** is a lightweight, dual-engine CLI designed for enterprise platform engineering and site reliability teams. It combines an **N-ary Tree Static Site Generator (SSG)** to transform internal Markdown runbooks into responsive offline documentation portals, alongside a **high-throughput log analytics engine** accelerated by native C memory streaming.
 
 ---
 
-## 📌 Ringkasan & Tujuan Proyek
+## Architectural Overview
 
-**LogPulse CLI** adalah alat command-line interface (CLI) internal berskala enterprise yang dirancang untuk kebutuhan tim DevOps, SRE, dan Platform Engineering:
-1. **Static Site Generator (SSG) untuk Dokumentasi & SOP**: Mengubah dokumen SOP/Runbook berformat Markdown (`.md`) menjadi portal web statis yang bersih, responsif, memiliki fitur pencarian luring (offline), serta hierarki navigasi otomatis.
-2. **Log Audit & Analytics Dashboard**: Menganalisis log server berukuran besar secara cepat, mendeteksi pola lonjakan error/warning, mengagregasi lalu lintas berdasarkan stempel waktu (time-series), dan menyajikan laporan audit ke dalam dasbor HTML statis modern tanpa ketergantungan CDN eksternal.
-
----
-
-## 🏛️ Arsitektur Sistem & Spesifikasi Teknis
-
-```mermaid
-graph TD
-    subgraph CLI Entrypoint
-        CLI[LogPulse CLI - src/core/cli.py]
-    end
-
-    subgraph Module 1: Multi-Language & C Bridge
-        C_SRC[log_parser.c / log_parser.h<br/>Manual malloc/free] -->|Compile| C_LIB[liblogparser.so / logparser.dll]
-        C_LIB -->|ctypes bridge| BRIDGE[src/core/c_bridge.py]
-        BRIDGE -->|Fallback bila belum dikompilasi| PY_STREAM[Python Streaming Parser]
-    end
-
-    subgraph Module 2: SSG OOP & Tree DS
-        DOCS[docs/*.md SOPs] --> PARSER[MarkdownParser]
-        PARSER --> TREE[DocTree - N-Ary Tree Data Structure]
-        TREE -->|DFS Pre-Order| LINKS[Prev/Next Document Linking]
-        TREE -->|Upward Parent Traversal| CRUMBS[Breadcrumbs Resolution]
-        TREE -->|BFS Level-Order| SITEMAP[Automated Sitemap Hierarchy]
-        LINKS --> RENDERER[TemplateRenderer - Jinja2]
-        CRUMBS --> RENDERER
-        SITEMAP --> RENDERER
-        RENDERER --> PORTAL[dist/portal/index.html & SOP Pages]
-    end
-
-    subgraph Module 3: Functional Analytics
-        LOGS[sample_logs/server_production.log] --> PURE_PARSE[Pure Functions: parse_log_line]
-        PURE_PARSE --> IMMUTABLE[Immutable LogRecord dataclass]
-        IMMUTABLE --> FP_PIPE[Functional Pipeline: map, filter, reduce]
-        FP_PIPE --> AGG[build_audit_summary & Hourly Series]
-        AGG --> AUDIT_HTML[dist/audit/audit_report.html Dashboard]
-    end
-
-    CLI -->|build-docs| Module 2
-    CLI -->|audit-logs| Module 3
-    CLI -->|status| BRIDGE
-    CLI -->|pipeline| Module 2 & Module 3
+```
+                          ┌───────────────────────────┐
+                          │       logpulse CLI        │
+                          └─────────────┬─────────────┘
+                                        │
+                 ┌──────────────────────┴──────────────────────┐
+                 │                                             │
+                 ▼                                             ▼
+     [Static Site Generator]                     [Log Analytics Engine]
+  ┌─────────────────────────────┐             ┌─────────────────────────────┐
+  │ • Frontmatter YAML Parser   │             │ • Pure Functional Pipeline  │
+  │ • N-Ary DocTree AST         │             │   (map, filter, reduce)     │
+  │ • DFS (Prev/Next Linking)   │             │ • P50/P95 Latency Percentile│
+  │ • BFS (Level-Order Sitemap) │             │ • Time-Series Distribution  │
+  │ • Jinja2 Offline Templates  │             └──────────────┬──────────────┘
+  └──────────────┬──────────────┘                            │
+                 │                                           ▼
+                 │                             [Dual-Engine Ingestion]
+                 │                           ┌─────────────────────────────┐
+                 │                           │ • C Shared Lib (POSIX/Win)  │
+                 │                           │   Manual malloc/free chunk  │
+                 │                           │ • Transparent Py Fallback   │
+                 │                           └──────────────┬──────────────┘
+                 ▼                                          ▼
+     ┌────────────────────────┐                ┌────────────────────────┐
+     │ dist/portal/index.html │                │ dist/audit/report.html │
+     │ Responsive Web Portal  │                │ Interactive Dashboard  │
+     └────────────────────────┘                └────────────────────────┘
 ```
 
 ---
 
-### 1. Multi-Language Module (Python & C Memory Management)
+## Key Features
 
-- **Modul Python (`src/core/`)**:
-  Mengelola CLI interface, argument parser (`argparse`), terminal formatting tingkat enterprise (`rich`), orkestrasi SSG, dan rendering HTML.
-- **Modul C (`src/c_modules/log_parser.c`)**:
-  - Ditulis dalam C standar dengan **alokasi memori manual murni**:
-    - `malloc()` dan `calloc()` untuk alokasi dynamic buffer chunk (64 KB) dan struct statistik `LogStats`.
-    - `realloc()` untuk ekspansi dinamis line buffer tanpa risiko buffer overflow.
-    - `free()` melalui fungsi C eksplisit `free_log_stats()` guna menjamin **zero memory leak**.
-  - **C Bridge (`src/core/c_bridge.py`)**:
-    Menghubungkan C shared library melalui Python `ctypes`. Dilengkapi **Transparent Fallback Architecture**: jika pustaka C belum dikompilasi pada sistem target (misal Windows tanpa GCC), LogPulse otomatis beralih ke streaming pure Python parser tanpa crash.
-
----
-
-### 2. Static Site Generator (OOP & Data Structures)
-
-- **Object-Oriented Programming (OOP)**:
-  - `Document`: Enkapsulasi konten Markdown, HTML ter-render, metadata frontmatter, slug, dan breadcrumbs.
-  - `DocumentMetadata`: Model metadata dokumen (title, author, version, category, tags, status badge).
-  - `MarkdownParser`: Ekstraksi frontmatter YAML, pembuatan anchor deep-linking (`#heading`), dan transformasi callout alert enterprise (`> [!NOTE]`, `> [!WARNING]`, dsb).
-  - `TemplateRenderer`: Manajemen template Jinja2, filter format tanggal, dan badge status.
-  - `StaticSiteGenerator`: Orkestrator pembangun portal statis.
-- **Data Structures & Algorithms (DSA)**:
-  - **N-Ary Tree (`DocTree` & `DocTreeNode`)**: Memodelkan struktur direktori folder dan file dokumen sebagai node pohon dengan penunjuk `parent` dan kumpulan `children`.
-  - **Depth-First Search (DFS) Pre-Order**: Membangun urutan baca dokumen (Prev/Next navigation chain) dan sitemap.
-  - **Breadth-First Search (BFS) Level-Order**: Menggunakan antrean FIFO (`collections.deque`) untuk analisis kedalaman hierarki kategori.
-  - **Parent Traversal Algorithm**: Menelusuri penunjuk parent ke arah root untuk meresolusi tautan breadcrumb secara otomatis.
+- **Dual-Engine Execution**:
+  - **Native C Layer (`log_parser.c`)**: Chunked streaming I/O (64 KB buffers) with explicit `malloc` and `free` routines, avoiding memory ballooning when parsing large access logs.
+  - **Python Fallback**: Automatic, zero-crash fallback to pure Python streaming if a native C compiler is unavailable.
+- **N-ary Tree Static Site Generator**:
+  - Automatically derives sitemaps and sidebar hierarchies directly from the filesystem structure.
+  - Generates pre-order traversal sequences for sequential document reading (Previous / Next navigation).
+  - Upward parent pointer resolution generates dynamic breadcrumb paths.
+- **Functional Analytics Pipeline**:
+  - Immutable data modeling using frozen dataclasses (`LogRecord`, `AuditSummary`).
+  - Strict side-effect-free data transformation using function composition (`compose`, `pipe`, `curry`).
+  - Time-series aggregations, error rate calculations, and P95 latency evaluations using `functools.reduce` and `map`/`filter` pipelines.
+- **Offline & Self-Contained Output**:
+  - Zero CDN dependencies. All generated static portals and audit dashboards operate fully offline via `file://` URI protocol.
 
 ---
 
-### 3. Log Audit & Analytics Engine (Functional Programming)
-
-- **Functional Programming (FP) Paradigm**:
-  - **Pure Functions**: Fungsi murni tanpa efek samping (`parse_log_line`, `extract_client_ip`, `extract_endpoint`, `extract_status_code`).
-  - **Immutabilitas**: Menggunakan immutable frozen dataclasses (`LogRecord`, `HourlyMetric`, `AuditSummary`).
-  - **Higher-Order Functions & Currying**: `compose(*fns)`, `pipe(x, *fns)`, dan fungsi predikat currying `is_status_range(min, max)` serta `is_level(target)`.
-  - **Map, Filter, Reduce**:
-    - `filter(is_error, records)` & `filter(is_status_range(500, 599), records)`.
-    - `map(extract_client_ip, records)`.
-    - `functools.reduce(frequency_reducer, items, {})` untuk penghitungan frekuensi kemunculan.
-  - **Time-Series Analysis**: Mengagregasi volume lalu lintas, error rate, dan rata-rata latensi (P50 dan P95 percentile) ke dalam rentang waktu per jam.
-  - **HTML Audit Dashboard**: Menghasilkan dasbor HTML statis responsif dengan kartu KPI metrik, diagram batang CSS murni, tabel top endpoints, dan tabel analisis insiden error.
-
----
-
-## 📂 Struktur Direktori Proyek
+## Project Structure
 
 ```
-LogPulse-CLI/
+.
 ├── src/
-│   ├── __init__.py
 │   ├── core/
-│   │   ├── __init__.py
-│   │   ├── cli.py                     # CLI entrypoint (rich interface)
-│   │   ├── c_bridge.py                # ctypes interface & fallback engine
-│   │   ├── ssg/                       # Modul Static Site Generator (OOP)
-│   │   │   ├── __init__.py
-│   │   │   ├── models.py              # Document, Metadata, Heading, Breadcrumb
-│   │   │   ├── tree.py                # N-ary Tree DS & BFS/DFS algorithms
-│   │   │   ├── parser.py              # Markdown & Frontmatter parser
-│   │   │   ├── renderer.py            # Jinja2 template renderer
-│   │   │   └── generator.py           # SSG Orchestrator
-│   │   └── analytics/                 # Modul Log Analytics (Functional)
-│   │       ├── __init__.py
-│   │       ├── models.py              # Immutable LogRecord & AuditSummary
-│   │       ├── pure_functions.py      # Pure parsers, combinators, currying
-│   │       ├── aggregators.py         # map, filter, functools.reduce
-│   │       └── engine.py              # Analytics engine & report builder
-│   └── c_modules/                     # Modul Native C
-│       ├── log_parser.c               # Implementasi C dengan manual malloc/free
-│       ├── log_parser.h               # Header C & struct definisi
-│       └── Makefile                   # Kompilasi shared library (.so / .dll)
+│   │   ├── cli.py               # CLI entrypoint and command dispatcher
+│   │   ├── c_bridge.py          # ctypes foreign function interface & fallback
+│   │   ├── ssg/                 # Static Site Generator package
+│   │   │   ├── models.py        # Document, Metadata, and Heading models
+│   │   │   ├── tree.py          # N-ary Tree data structure & traversals
+│   │   │   ├── parser.py        # Markdown tokenizer & anchor generator
+│   │   │   ├── renderer.py      # Template evaluation engine
+│   │   │   └── generator.py     # Build pipeline orchestrator
+│   │   └── analytics/           # Functional analytics package
+│   │       ├── models.py        # Immutable records & metrics
+│   │       ├── pure_functions.py# Pure parsers, combinators & predicates
+│   │       ├── aggregators.py   # Functional map-reduce reducers
+│   │       └── engine.py        # Log analytics executor & HTML builder
+│   └── c_modules/               # High-performance C core
+│       ├── log_parser.c         # Memory-managed log parsing implementation
+│       ├── log_parser.h         # Export definitions & ABI structures
+│       └── Makefile             # Shared library compilation rules
 ├── templates/
-│   ├── ssg/
-│   │   ├── base.html                  # Base layout dokumen SOP
-│   │   ├── doc.html                   # Halaman isi SOP & pagination
-│   │   └── sitemap.html               # Halaman sitemap hierarki pohon
-│   ├── audit/
-│   │   └── dashboard.html             # Dasbor laporan audit log
-│   └── assets/
-│       ├── style.css                  # CSS enterprise mandiri (tanpa CDN)
-│       └── app.js                     # Script filter pencarian & copy kode
-├── docs/                              # Dokumen SOP internal Markdown
-│   ├── index.md                       # Beranda portal SOP
-│   ├── devops/
-│   │   ├── kubernetes-incident-runbook.md
-│   │   └── ci-cd-security-policy.md
-│   └── database/
-│       ├── postgres-failover-sop.md
-│       └── redis-cluster-recovery.md
-├── sample_logs/
-│   └── server_production.log          # File log server 3.000 baris realistis
-├── tests/                             # Unit Test Suite
-│   ├── __init__.py
-│   ├── test_tree.py                   # Pengujian Tree DS & DFS/BFS
-│   ├── test_ssg.py                    # Pengujian OOP SSG & Markdown
-│   ├── test_functional_analytics.py   # Pengujian pure functions, map, filter, reduce
-│   └── test_c_bridge.py               # Pengujian bridge & fallback
+│   ├── ssg/                     # Jinja2 documentation layouts
+│   ├── audit/                   # Dashboard templates
+│   └── assets/                  # Self-contained CSS & client utilities
+├── docs/                        # Enterprise SOP markdown repository
+├── sample_logs/                 # Test production log data
+├── tests/                       # Test suite (Tree, SSG, Analytics, Bridge)
 ├── scripts/
-│   ├── install.sh                     # Script otomatisasi instalasi Linux
-│   ├── build.sh                       # Script build & test Linux
-│   └── install.ps1                    # Script otomatisasi instalasi Windows
-├── Makefile                           # Top-level Makefile
-├── requirements.txt                   # Dependensi Python
-├── setup.py                           # Konfigurasi pip package
-├── .gitignore                         # Aturan Git ignore
-└── README.md                          # Dokumentasi teknis proyek
+│   ├── install.sh               # POSIX / WSL automated setup script
+│   ├── build.sh                 # Linux build and test runner
+│   └── install.ps1              # Windows PowerShell setup script
+├── Makefile                     # Top-level build automation
+├── requirements.txt             # Runtime dependencies
+└── setup.py                     # Python package definition
 ```
 
 ---
 
-## 🚀 Instalasi & Otomatisasi
+## Installation
 
-### Opsi A: Linux / macOS (Bash)
+### Prerequisites
 
-Script otomatis akan mendeteksi Python, mengompilasi modul C menjadi `liblogparser.so`, menginstal dependensi, dan meregistrasikan command `logpulse`:
+- Python 3.9+
+- Optional for C acceleration: GCC, Clang, or MSVC (MinGW on Windows)
+
+### Linux / WSL / macOS
 
 ```bash
-chmod +x scripts/install.sh scripts/build.sh
-./scripts/install.sh
+# Automated install (builds C shared library and registers CLI)
+bash scripts/install.sh
 ```
 
-### Opsi B: Windows (PowerShell)
+Alternatively, build manually using `make`:
 
-Jalankan script PowerShell berikut:
+```bash
+make build-c
+make install
+```
+
+### Windows (PowerShell)
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\scripts\install.ps1
 ```
 
-Atau instal secara manual dengan `pip`:
+Or install via standard `pip`:
 
 ```bash
 pip install -r requirements.txt
 pip install -e .
 ```
 
-### Opsi C: Menggunakan Makefile
-
-```bash
-# Kompilasi C, jalankan unit test, dan bangun pipeline lengkap
-make all
-
-# Atau jalankan target secara spesifik:
-make build-c      # Kompilasi pustaka C
-make test         # Menjalankan unit test
-make build-docs   # Membangun portal web SOP
-make audit-logs   # Menganalisis log dan membuat HTML dashboard
-make pipeline     # Menjalankan SSG dan Log Audit sekaligus
-make clean        # Membersihkan artifact
-```
-
 ---
 
-## 💻 Panduan Penggunaan CLI
+## CLI Reference
 
-Setelah terinstal, perintah `logpulse` dapat dipanggil langsung dari terminal Anda:
+### 1. System Diagnostic
 
-### 1. Memeriksa Status Sistem & Akselerasi C
+Verify environment status and native C library linkage:
 
 ```bash
 logpulse status
 ```
-*Output menampilkan status runtime Python, status linking pustaka akselerasi C, dan kesiapan arsitektur.*
 
----
+### 2. Build Documentation Portal (SSG)
 
-### 2. Membangun Portal Dokumentasi SOP (SSG)
+Compile Markdown runbooks and SOPs into a static web portal:
 
 ```bash
 logpulse build-docs --docs-dir docs --output-dir dist/portal
 ```
-- Membaca semua file SOP Markdown di dalam direktori `docs/`.
-- Membangun N-ary Tree dan meresolusi breadcrumbs & pagination link.
-- Menghasilkan website HTML statis lengkap di `dist/portal/index.html`.
 
----
+*Output:* `dist/portal/index.html` and `dist/portal/sitemap.html`.
 
-### 3. Menganalisis Log Server & Membuat Dasbor Audit
+### 3. Log Audit & Analytics
+
+Analyze server logs and generate an audit report:
 
 ```bash
 logpulse audit-logs --log-file sample_logs/server_production.log --output-html dist/audit/audit_report.html
 ```
-- Menjalankan streaming parser terakselerasi C (atau Python fallback).
-- Menerapkan functional filtering dan time-series map-reduce.
-- Menghasilkan dasbor audit interaktif di `dist/audit/audit_report.html`.
 
----
+*Output:* `dist/audit/audit_report.html`.
 
-### 4. Menjalankan Pipeline Lengkap (End-to-End)
+### 4. End-to-End Pipeline
+
+Execute both documentation generation and log audit in a single run:
 
 ```bash
 logpulse pipeline
 ```
-Menjalankan kompilasi portal dokumentasi SOP sekaligus audit log server dalam satu langkah terotomatisasi.
 
 ---
 
-## ⚙️ Kompilasi Modul C (Manual Memory Management)
+## C Module Details
 
-Modul C mengimplementasikan pemindaian cepat berbasis streaming chunk tanpa membaca seluruh file ke dalam RAM:
+The native parser processes arbitrary log sizes via streaming chunk buffers, bypassing memory limitations:
 
 ```c
-// Contoh fungsi C dengan manual memory management di src/c_modules/log_parser.c
 LogStats* stats = (LogStats*)calloc(1, sizeof(LogStats));
 char* chunk_buf = (char*)malloc(CHUNK_BUFFER_SIZE);
 char* line_buf = (char*)malloc(line_cap);
 
-// ... streaming loop & line processing ...
+// Stream processing loop...
 
 free(line_buf);
 free(chunk_buf);
-// struct stats dilepaskan melalui:
 free_log_stats(stats);
 ```
 
-Untuk mengompilasi secara manual:
-- **Linux (GCC)**:
+### Manual Compilation
+
+- **Linux / WSL**:
   ```bash
   gcc -O3 -Wall -Wextra -fPIC -shared -o src/c_modules/liblogparser.so src/c_modules/log_parser.c
   ```
-- **macOS (Clang)**:
+- **macOS**:
   ```bash
   clang -O3 -Wall -Wextra -fPIC -shared -o src/c_modules/liblogparser.dylib src/c_modules/log_parser.c
   ```
-- **Windows (MinGW GCC)**:
+- **Windows (MinGW)**:
   ```bash
   gcc -O3 -shared -DBUILDING_LOGPARSER_DLL -o src/c_modules/logparser.dll src/c_modules/log_parser.c
   ```
 
 ---
 
-## 🧪 Pengujian Unit (Unit Testing)
+## Testing
 
-Seluruh komponen memiliki cakupan pengujian unit yang lengkap menggunakan `unittest`:
+Run the test suite:
 
 ```bash
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-Hasil pengujian mencakup:
-- `test_tree.py`: N-ary Tree insertion, BFS level-order, DFS pre-order, breadcrumb upward traversal, sequential linking.
-- `test_ssg.py`: Markdown parsing, frontmatter YAML extraction, anchor generation, alert callout transformation.
-- `test_functional_analytics.py`: Function composition (`compose`, `pipe`), pure predicates, frequency reduce, percentile P50/P95.
-- `test_c_bridge.py`: Dynamic shared library loading & transparent fallback validation.
+Test coverage includes:
+- `test_tree.py`: N-ary Tree path synthesis, DFS pre/post-order, BFS level-order, breadcrumbs.
+- `test_ssg.py`: Markdown parsing, YAML frontmatter, anchor slugs, alert callouts.
+- `test_functional_analytics.py`: Function composition, pure predicates, frequency reduction, latency percentiles.
+- `test_c_bridge.py`: Dynamic loading, fallback mechanism, ABI struct mapping.
 
 ---
 
-## 📄 Lisensi & Standar Rekayasa
+## License
 
-Proyek ini dibangun mengikuti kaidah rekayasa perangkat lunak enterprise:
-- **Clean Architecture & Separation of Concerns**
-- **Type Hinting (PEP 484) & Dataclasses**
-- **Zero Memory Leaks pada C**
-- **Zero Side-Effects pada Functional Pipeline**
-- **Offline Self-Contained Web Output**
+This project is licensed under the MIT License.

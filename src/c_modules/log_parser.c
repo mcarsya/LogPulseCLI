@@ -7,7 +7,7 @@
 #include <ctype.h>
 #include <time.h>
 
-#define CHUNK_BUFFER_SIZE (64 * 1024)   /* 64 KB memory chunk buffer */
+#define CHUNK_BUFFER_SIZE (64 * 1024)
 #define INITIAL_LINE_CAPACITY 1024
 #define C_PARSER_VERSION "1.2.0-native"
 
@@ -15,9 +15,6 @@ LOGPARSER_API const char* get_c_parser_version(void) {
     return C_PARSER_VERSION;
 }
 
-/**
- * Case-insensitive search helper within bounded text.
- */
 static int contains_token_ci(const char* line, const char* token) {
     if (!line || !token) return 0;
     size_t token_len = strlen(token);
@@ -36,11 +33,7 @@ static int contains_token_ci(const char* line, const char* token) {
     return 0;
 }
 
-/**
- * Detects HTTP status code ranges (2xx, 3xx, 4xx, 5xx) in standard log formats.
- */
 static void inspect_status_code(const char* line, LogStats* stats) {
-    /* Look for " 2xx ", " 3xx ", " 4xx ", " 5xx " patterns */
     const char* p = line;
     while (*p) {
         if ((*p == ' ' || *p == '"' || *p == '[') && isdigit((unsigned char)*(p + 1))) {
@@ -70,9 +63,6 @@ static void inspect_status_code(const char* line, LogStats* stats) {
     }
 }
 
-/**
- * Parses a single line and increments categorical counters.
- */
 static void process_line(const char* line, LogStats* stats) {
     if (!line || !stats) return;
 
@@ -94,7 +84,6 @@ static void process_line(const char* line, LogStats* stats) {
 LOGPARSER_API LogStats* parse_log_file(const char* filepath) {
     if (!filepath) return NULL;
 
-    /* Allocate memory manually on heap for the statistics struct */
     LogStats* stats = (LogStats*)calloc(1, sizeof(LogStats));
     if (!stats) {
         return NULL;
@@ -108,7 +97,6 @@ LOGPARSER_API LogStats* parse_log_file(const char* filepath) {
         return stats;
     }
 
-    /* Allocate raw buffer for streaming I/O */
     char* chunk_buf = (char*)malloc(CHUNK_BUFFER_SIZE);
     if (!chunk_buf) {
         fclose(fp);
@@ -116,7 +104,6 @@ LOGPARSER_API LogStats* parse_log_file(const char* filepath) {
         return stats;
     }
 
-    /* Dynamic line buffer for handling arbitrary long lines */
     size_t line_cap = INITIAL_LINE_CAPACITY;
     char* line_buf = (char*)malloc(line_cap);
     if (!line_buf) {
@@ -144,7 +131,6 @@ LOGPARSER_API LogStats* parse_log_file(const char* filepath) {
                     size_t new_cap = line_cap * 2;
                     char* resized = (char*)realloc(line_buf, new_cap);
                     if (!resized) {
-                        /* On realloc failure, process what we have so far */
                         line_buf[line_len] = '\0';
                         process_line(line_buf, stats);
                         line_len = 0;
@@ -158,13 +144,11 @@ LOGPARSER_API LogStats* parse_log_file(const char* filepath) {
         }
     }
 
-    /* Process dangling line without trailing newline */
     if (line_len > 0) {
         line_buf[line_len] = '\0';
         process_line(line_buf, stats);
     }
 
-    /* Release dynamically allocated parsing buffers */
     free(line_buf);
     free(chunk_buf);
     fclose(fp);
@@ -177,7 +161,6 @@ LOGPARSER_API LogStats* parse_log_file(const char* filepath) {
 
 LOGPARSER_API void free_log_stats(LogStats* stats) {
     if (stats) {
-        /* Manual memory management: free the heap-allocated struct */
         free(stats);
     }
 }
@@ -204,7 +187,6 @@ LOGPARSER_API int64_t filter_error_lines(const char* input_path, const char* out
 
     int64_t matched_count = 0;
 
-    /* Read lines with fgets and dynamic expansion if needed */
     while (fgets(line, (int)buf_cap, in_fp)) {
         if (contains_token_ci(line, "ERROR") || 
             contains_token_ci(line, "CRITICAL") || 

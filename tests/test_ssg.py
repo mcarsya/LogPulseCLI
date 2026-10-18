@@ -1,15 +1,8 @@
-"""
-Unit Tests for Static Site Generator (SSG) Components.
-"""
-
 import unittest
-from pathlib import Path
 from src.core.ssg.parser import MarkdownParser, slugify
-from src.core.ssg.models import DocumentMetadata
 
 
 class TestSSGParser(unittest.TestCase):
-
     def setUp(self):
         self.parser = MarkdownParser()
 

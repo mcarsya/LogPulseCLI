@@ -45,3 +45,4 @@ When performing scheduled maintenance on the active leader:
 
 > [!TIP]
 > Always run an index health check (`pg_stat_user_indexes`) after a major failover event to ensure replication stream fidelity.
+

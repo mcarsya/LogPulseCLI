@@ -1,9 +1,3 @@
-"""
-LogPulse CLI - C Extension Bridge & Fallback Engine
-Provides a ctypes interface to native C log_parser shared library with
-seamless, zero-dependency pure Python fallback if the binary is not compiled.
-"""
-
 from __future__ import annotations
 
 import ctypes
@@ -12,11 +6,10 @@ import platform
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 
 class CLogStats(ctypes.Structure):
-    """C struct mapping for LogStats defined in log_parser.h."""
     _fields_ = [
         ("total_lines", ctypes.c_uint64),
         ("bytes_processed", ctypes.c_uint64),
@@ -35,7 +28,6 @@ class CLogStats(ctypes.Structure):
 
 @dataclass(frozen=True)
 class NativeLogStats:
-    """Pythonic representation of parsed log statistics."""
     total_lines: int
     bytes_processed: int
     info_count: int
@@ -47,7 +39,7 @@ class NativeLogStats:
     status_4xx: int
     status_5xx: int
     execution_time_ms: float
-    engine: str  # 'C-Native (Memory Managed)' or 'Python-Fallback'
+    engine: str
     last_error: str = ""
 
     @property
@@ -56,8 +48,6 @@ class NativeLogStats:
 
 
 class CBridge:
-    """Manages dynamic loading of C shared library and ctypes function signatures."""
-
     def __init__(self, c_module_dir: Optional[Path] = None):
         if c_module_dir is None:
             c_module_dir = Path(__file__).resolve().parent.parent / "c_modules"
@@ -85,31 +75,22 @@ class CBridge:
     def _initialize_library(self) -> None:
         lib_path = self._find_library_path()
         if not lib_path:
-            self.load_error = (
-                f"Native binary not found in {self.c_module_dir}. "
-                "Compile with 'make' or bash scripts/build.sh for C acceleration."
-            )
+            self.load_error = f"Binary not found in {self.c_module_dir}"
             return
 
         try:
             self.lib = ctypes.CDLL(str(lib_path))
-            
-            # Setup argument and return types
             self.lib.parse_log_file.argtypes = [ctypes.c_char_p]
             self.lib.parse_log_file.restype = ctypes.POINTER(CLogStats)
-
             self.lib.free_log_stats.argtypes = [ctypes.POINTER(CLogStats)]
             self.lib.free_log_stats.restype = None
-
             self.lib.filter_error_lines.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
             self.lib.filter_error_lines.restype = ctypes.c_int64
-
             self.lib.get_c_parser_version.argtypes = []
             self.lib.get_c_parser_version.restype = ctypes.c_char_p
-
         except Exception as exc:
             self.lib = None
-            self.load_error = f"Failed to load C library at {lib_path}: {exc}"
+            self.load_error = str(exc)
 
     @property
     def is_available(self) -> bool:
@@ -118,49 +99,45 @@ class CBridge:
     def get_version(self) -> str:
         if self.lib and hasattr(self.lib, "get_c_parser_version"):
             return self.lib.get_c_parser_version().decode("utf-8", errors="ignore")
-        return "None (Fallback Mode)"
+        return "None"
 
     def parse_file(self, filepath: str | Path) -> NativeLogStats:
         path_str = str(Path(filepath).resolve())
         if not os.path.exists(path_str):
-            raise FileNotFoundError(f"Log file not found: {path_str}")
+            raise FileNotFoundError(f"File not found: {path_str}")
 
         if self.is_available and self.lib is not None:
             return self._parse_with_c(path_str)
-        else:
-            return self._parse_with_python_fallback(path_str)
+        return self._parse_with_python_fallback(path_str)
 
     def _parse_with_c(self, filepath: str) -> NativeLogStats:
         c_path = filepath.encode("utf-8")
         raw_ptr = self.lib.parse_log_file(c_path)  # type: ignore
 
         if not raw_ptr:
-            raise RuntimeError("C parse_log_file returned NULL pointer.")
+            raise RuntimeError("parse_log_file returned NULL")
 
         try:
-            struct_data = raw_ptr.contents
-            stats = NativeLogStats(
-                total_lines=int(struct_data.total_lines),
-                bytes_processed=int(struct_data.bytes_processed),
-                info_count=int(struct_data.info_count),
-                warning_count=int(struct_data.warning_count),
-                error_count=int(struct_data.error_count),
-                critical_count=int(struct_data.critical_count),
-                status_2xx=int(struct_data.status_2xx),
-                status_3xx=int(struct_data.status_3xx),
-                status_4xx=int(struct_data.status_4xx),
-                status_5xx=int(struct_data.status_5xx),
-                execution_time_ms=float(struct_data.execution_time_ms),
+            s = raw_ptr.contents
+            return NativeLogStats(
+                total_lines=int(s.total_lines),
+                bytes_processed=int(s.bytes_processed),
+                info_count=int(s.info_count),
+                warning_count=int(s.warning_count),
+                error_count=int(s.error_count),
+                critical_count=int(s.critical_count),
+                status_2xx=int(s.status_2xx),
+                status_3xx=int(s.status_3xx),
+                status_4xx=int(s.status_4xx),
+                status_5xx=int(s.status_5xx),
+                execution_time_ms=float(s.execution_time_ms),
                 engine=f"C-Native ({self.get_version()})",
-                last_error=struct_data.last_error.decode("utf-8", errors="ignore").strip(),
+                last_error=s.last_error.decode("utf-8", errors="ignore").strip(),
             )
-            return stats
         finally:
-            # Crucial: Call C's manual memory free function
             self.lib.free_log_stats(raw_ptr)  # type: ignore
 
     def _parse_with_python_fallback(self, filepath: str) -> NativeLogStats:
-        """Pure Python streaming parser matching C logic for environments without C compiler."""
         start_time = time.perf_counter()
         total_lines = 0
         bytes_processed = 0
@@ -188,7 +165,6 @@ class CBridge:
                 elif "INFO" in line or "[INFO]" in line:
                     info_count += 1
 
-                # Fast status code heuristic
                 if " 200 " in line or " 201 " in line or " 204 " in line:
                     status_2xx += 1
                 elif " 301 " in line or " 302 " in line or " 304 " in line:
@@ -217,5 +193,4 @@ class CBridge:
         )
 
 
-# Global singleton bridge instance
 bridge = CBridge()

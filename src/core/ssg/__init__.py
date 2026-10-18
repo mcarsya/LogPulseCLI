@@ -1,4 +1,3 @@
-"""LogPulse SSG (Static Site Generator) package."""
 from .models import Document, DocumentMetadata, HeadingItem, BreadcrumbItem
 from .tree import DocTree, DocTreeNode
 from .parser import MarkdownParser

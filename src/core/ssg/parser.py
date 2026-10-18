@@ -1,9 +1,3 @@
-"""
-LogPulse CLI - Markdown & Frontmatter Parser
-Converts markdown SOP documents into structured HTML with deep-linking anchors,
-TOC extraction, callout alerts, and code highlights.
-"""
-
 from __future__ import annotations
 
 import re
@@ -26,7 +20,6 @@ except ImportError:
 
 
 def slugify(text: str) -> str:
-    """Converts a title into a URL/anchor friendly slug."""
     text = text.strip().lower()
     text = re.sub(r"[^\w\s-]", "", text)
     text = re.sub(r"[\s_-]+", "-", text)
@@ -34,10 +27,6 @@ def slugify(text: str) -> str:
 
 
 class MarkdownParser:
-    """
-    Parser that extracts YAML frontmatter and transforms Markdown into HTML.
-    """
-
     def __init__(self):
         if HAS_MARKDOWN_IT:
             self.md_engine = MarkdownIt("commonmark", {"html": True, "breaks": True}).enable(["table"])
@@ -45,10 +34,6 @@ class MarkdownParser:
             self.md_engine = None
 
     def parse_frontmatter(self, content: str) -> Tuple[Dict[str, Any], str]:
-        """
-        Splits frontmatter delimited by `---` from markdown body.
-        Supports both PyYAML and a lightweight native YAML parser.
-        """
         if not content.startswith("---"):
             return {}, content
 
@@ -68,7 +53,6 @@ class MarkdownParser:
             except Exception:
                 pass
 
-        # Lightweight fallback native parser for simple key: value
         result: Dict[str, Any] = {}
         for line in raw_yaml.splitlines():
             line = line.strip()
@@ -89,10 +73,6 @@ class MarkdownParser:
         return result, body
 
     def extract_headings_and_inject_anchors(self, html: str) -> Tuple[str, List[HeadingItem]]:
-        """
-        Extracts H2 and H3 headings for the Table of Contents,
-        and ensures all headers have an `id` attribute for direct anchor linking.
-        """
         headings: List[HeadingItem] = []
         slug_counts: Dict[str, int] = {}
 
@@ -117,13 +97,6 @@ class MarkdownParser:
         return modified_html, headings
 
     def transform_callouts(self, html: str) -> str:
-        """
-        Converts GitHub/GitLab style callouts:
-        > [!NOTE] -> <div class="callout callout-note">...
-        > [!WARNING] -> <div class="callout callout-warning">...
-        > [!IMPORTANT] -> <div class="callout callout-important">...
-        > [!TIP] -> <div class="callout callout-tip">...
-        """
         callout_types = {
             "NOTE": ("callout-note", "ℹ️", "Note"),
             "TIP": ("callout-tip", "💡", "Tip"),
@@ -152,7 +125,6 @@ class MarkdownParser:
         return html
 
     def render_markdown(self, markdown_text: str) -> str:
-        """Transforms raw markdown body into styled HTML."""
         if self.md_engine:
             raw_html = self.md_engine.render(markdown_text)
         else:
@@ -163,7 +135,6 @@ class MarkdownParser:
         return html_with_anchors
 
     def _native_simple_markdown(self, text: str) -> str:
-        """Fallback markdown converter when external libraries are not present."""
         lines = text.splitlines()
         html_out = []
         in_code_block = False
@@ -191,7 +162,6 @@ class MarkdownParser:
                 code_lines.append(line)
                 continue
 
-            # Headers
             if line.startswith("### "):
                 html_out.append(f"<h3>{line[4:]}</h3>")
             elif line.startswith("## "):
@@ -210,14 +180,12 @@ class MarkdownParser:
         return "\n".join(html_out)
 
     def parse_file(self, file_path: Path, docs_root: Path) -> Document:
-        """Parses a markdown file into a full Document instance."""
         content = file_path.read_text(encoding="utf-8")
         raw_meta, body = self.parse_frontmatter(content)
 
         rel_path = file_path.relative_to(docs_root)
         slug = str(rel_path.with_suffix("")).replace("\\", "/")
 
-        # Infer title if not explicitly in metadata
         if "title" not in raw_meta:
             title_match = re.search(r"^#\s+(.+)$", body, re.MULTILINE)
             if title_match:

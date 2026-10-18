@@ -1,7 +1,3 @@
-"""
-LogPulse CLI - SSG Models (OOP Data Models)
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -11,14 +7,13 @@ from typing import Any, Dict, List, Optional
 
 @dataclass
 class DocumentMetadata:
-    """Document Frontmatter metadata parsed from YAML blocks."""
     title: str = "Untitled Document"
     author: str = "Internal Engineering"
     version: str = "1.0.0"
-    category: str = "General SOP"
+    category: str = "General"
     tags: List[str] = field(default_factory=list)
     last_updated: str = ""
-    status: str = "Active"  # Active, Draft, Deprecated, Review
+    status: str = "Active"
     summary: str = ""
     order: int = 100
 
@@ -31,7 +26,7 @@ class DocumentMetadata:
             title=str(data.get("title", "Untitled Document")),
             author=str(data.get("author", "Internal Engineering")),
             version=str(data.get("version", "1.0.0")),
-            category=str(data.get("category", "General SOP")),
+            category=str(data.get("category", "General")),
             tags=tags,
             last_updated=str(data.get("last_updated", "")),
             status=str(data.get("status", "Active")),
@@ -42,7 +37,6 @@ class DocumentMetadata:
 
 @dataclass
 class HeadingItem:
-    """Table of contents entry."""
     level: int
     title: str
     slug: str
@@ -50,7 +44,6 @@ class HeadingItem:
 
 @dataclass
 class BreadcrumbItem:
-    """Breadcrumb navigation step."""
     title: str
     url: str
     is_current: bool = False
@@ -58,7 +51,6 @@ class BreadcrumbItem:
 
 @dataclass
 class Document:
-    """Encapsulates a single SOP/Runbook documentation page."""
     source_path: Path
     relative_path: Path
     slug: str

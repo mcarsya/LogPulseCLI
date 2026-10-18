@@ -1,9 +1,3 @@
-"""
-LogPulse CLI - Enterprise Command-Line Interface
-Combines Python OOP Static Site Generator, C Memory-Managed Log Acceleration,
-and Functional Analytics Engine.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -50,7 +44,6 @@ def print_banner() -> None:
 
 
 def cmd_status(args: argparse.Namespace) -> int:
-    """Displays system status, C library linkage, and environment health."""
     print_banner()
     c_status = "[bold green]LINKED (Active)[/bold green]" if bridge.is_available else "[bold yellow]NOT COMPILED (Fallback Active)[/bold yellow]"
     c_version = bridge.get_version()
@@ -81,7 +74,6 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 
 def cmd_build_docs(args: argparse.Namespace) -> int:
-    """Compiles markdown SOP documents to static website."""
     docs_dir = Path(args.docs_dir)
     output_dir = Path(args.output_dir)
 
@@ -124,7 +116,6 @@ def cmd_build_docs(args: argparse.Namespace) -> int:
 
 
 def cmd_audit_logs(args: argparse.Namespace) -> int:
-    """Executes functional log analytics and generates HTML audit report."""
     log_file = Path(args.log_file)
     output_html = Path(args.output_html)
     max_records = args.max_records
@@ -145,7 +136,6 @@ def cmd_audit_logs(args: argparse.Namespace) -> int:
         report_path = engine.generate_html_report(summary, output_html)
 
         if console:
-            # Display KPI summary cards in terminal
             kpi_table = Table(title="Log Audit Key Metrics", show_header=True, header_style="bold yellow")
             kpi_table.add_column("Metric", style="cyan")
             kpi_table.add_column("Value", style="bold white")
@@ -161,7 +151,6 @@ def cmd_audit_logs(args: argparse.Namespace) -> int:
 
             console.print(kpi_table)
 
-            # Top Endpoints Table
             if summary.top_endpoints:
                 ep_table = Table(title="Top 5 Most Requested Endpoints", show_header=True)
                 ep_table.add_column("Endpoint", style="cyan")
@@ -186,7 +175,6 @@ def cmd_audit_logs(args: argparse.Namespace) -> int:
 
 
 def cmd_pipeline(args: argparse.Namespace) -> int:
-    """Executes full enterprise pipeline: builds documentation portal and generates audit dashboard."""
     print_banner()
     if console:
         console.print("[bold yellow]>>> Executing Full Enterprise Pipeline...[/bold yellow]\n")
@@ -212,28 +200,23 @@ def cmd_pipeline(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Builds CLI argument parser."""
     parser = argparse.ArgumentParser(
         prog="logpulse",
         description="LogPulse CLI - Enterprise SOP Static Site Generator & Log Audit Engine",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
-    # Command: status
     subparsers.add_parser("status", help="Check C acceleration status and environment diagnostic")
 
-    # Command: build-docs
     p_docs = subparsers.add_parser("build-docs", help="Build Markdown SOPs into static HTML portal")
     p_docs.add_argument("--docs-dir", default="docs", help="Source directory containing Markdown SOPs (default: docs)")
     p_docs.add_argument("--output-dir", default="dist/portal", help="Output directory for static site (default: dist/portal)")
 
-    # Command: audit-logs
     p_audit = subparsers.add_parser("audit-logs", help="Analyze server log file and generate HTML audit dashboard")
     p_audit.add_argument("--log-file", default="sample_logs/server_production.log", help="Path to server log file")
     p_audit.add_argument("--output-html", default="dist/audit/audit_report.html", help="Path for HTML audit dashboard")
     p_audit.add_argument("--max-records", type=int, default=None, help="Limit number of records to parse")
 
-    # Command: pipeline
     p_pipe = subparsers.add_parser("pipeline", help="Run end-to-end documentation build and log audit")
     p_pipe.add_argument("--docs-dir", default="docs", help="Source directory containing Markdown SOPs")
     p_pipe.add_argument("--output-dir", default="dist/portal", help="Output directory for static site")

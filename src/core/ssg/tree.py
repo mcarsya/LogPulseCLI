@@ -1,23 +1,13 @@
-"""
-LogPulse CLI - Tree & Graph Data Structures
-Implements N-ary Tree data structure, DFS/BFS algorithms for automated
-documentation hierarchy, navigation graphs, and sitemap generation.
-"""
-
 from __future__ import annotations
 
 from collections import deque
 from pathlib import Path
-from typing import Callable, Generator, List, Optional, Tuple, Dict, Any
+from typing import Generator, List, Optional, Tuple, Dict, Any
 
 from .models import BreadcrumbItem, Document
 
 
 class DocTreeNode:
-    """
-    N-Ary Tree node representing either a category/directory or a leaf document.
-    """
-
     def __init__(
         self,
         name: str,
@@ -59,7 +49,6 @@ class DocTreeNode:
         self.children[child.name] = child
 
     def get_sorted_children(self) -> List[DocTreeNode]:
-        """Returns children sorted by (order asc, title asc)."""
         return sorted(
             self.children.values(),
             key=lambda n: (n.order, 0 if n.is_directory else 1, n.title.lower())
@@ -75,14 +64,10 @@ class DocTreeNode:
 
     def __repr__(self) -> str:
         kind = "DIR" if self.is_directory else "DOC"
-        return f"<DocTreeNode [{kind}] '{self.name}' title='{self.title}' children={len(self.children)}>"
+        return f"<DocTreeNode [{kind}] '{self.name}' title='{self.title}'>"
 
 
 class DocTree:
-    """
-    N-Ary Tree managing documentation site structure and graph relationships.
-    """
-
     def __init__(self, root_title: str = "Knowledge Base"):
         self.root = DocTreeNode(
             name="root",
@@ -94,14 +79,9 @@ class DocTree:
         self._doc_map: Dict[str, DocTreeNode] = {}
 
     def insert(self, relative_path: Path, document: Document) -> DocTreeNode:
-        """
-        Inserts a document into the tree at the given relative path.
-        Automatically constructs intermediate directory nodes.
-        """
         parts = relative_path.parts
         curr = self.root
 
-        # Build intermediate directory nodes
         accumulated_path = []
         for dir_name in parts[:-1]:
             accumulated_path.append(dir_name)
@@ -116,10 +96,9 @@ class DocTree:
                     parent=curr,
                     order=50,
                 )
-                curr.add_child(dir_dir := dir_node)
+                curr.add_child(dir_node)
             curr = curr.children[dir_name]
 
-        # Add leaf document node
         file_name = parts[-1]
         doc_node = DocTreeNode(
             name=file_name,
@@ -134,15 +113,9 @@ class DocTree:
         self._doc_map[document.slug] = doc_node
         return doc_node
 
-    # ================= Algorithms =================
-
     def dfs_pre_order(
         self, start_node: Optional[DocTreeNode] = None
     ) -> Generator[DocTreeNode, None, None]:
-        """
-        Depth-First Search (Pre-Order) Traversal algorithm.
-        Yields node before visiting its sub-trees.
-        """
         node = start_node or self.root
         yield node
         for child in node.get_sorted_children():
@@ -151,21 +124,12 @@ class DocTree:
     def dfs_post_order(
         self, start_node: Optional[DocTreeNode] = None
     ) -> Generator[DocTreeNode, None, None]:
-        """
-        Depth-First Search (Post-Order) Traversal algorithm.
-        Yields all children before visiting the parent node.
-        """
         node = start_node or self.root
         for child in node.get_sorted_children():
             yield from self.dfs_post_order(child)
         yield node
 
     def bfs_level_order(self) -> Generator[Tuple[int, DocTreeNode], None, None]:
-        """
-        Breadth-First Search (Level-Order) Traversal algorithm.
-        Uses FIFO queue (collections.deque) to traverse layer by layer.
-        Yields (level, node).
-        """
         queue: deque[Tuple[int, DocTreeNode]] = deque([(0, self.root)])
         while queue:
             level, current = queue.popleft()
@@ -174,10 +138,6 @@ class DocTree:
                 queue.append((level + 1, child))
 
     def get_document_sequence(self) -> List[Document]:
-        """
-        Returns all document leaves in deterministic pre-order traversal sequence.
-        Used to link previous and next documentation pages.
-        """
         docs: List[Document] = []
         for node in self.dfs_pre_order():
             if not node.is_directory and node.document:
@@ -185,18 +145,12 @@ class DocTree:
         return docs
 
     def link_sequential_documents(self) -> None:
-        """
-        Links adjacent documents as a doubly-linked chain (prev_doc / next_doc).
-        """
         docs = self.get_document_sequence()
         for i, doc in enumerate(docs):
             doc.prev_doc = docs[i - 1] if i > 0 else None
             doc.next_doc = docs[i + 1] if i < len(docs) - 1 else None
 
     def build_breadcrumbs(self, node: DocTreeNode) -> List[BreadcrumbItem]:
-        """
-        Traverses upward via parent pointers to construct breadcrumb trails.
-        """
         items: List[BreadcrumbItem] = []
         curr: Optional[DocTreeNode] = node
 
@@ -221,9 +175,6 @@ class DocTree:
         return items
 
     def to_nav_tree(self, current_slug: str = "") -> List[Dict[str, Any]]:
-        """
-        Serializes tree to nested structure for sidebar navigation templates.
-        """
         def _node_to_dict(node: DocTreeNode) -> Dict[str, Any]:
             is_active = (node.document and node.document.slug == current_slug)
             return {

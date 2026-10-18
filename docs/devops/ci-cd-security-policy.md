@@ -34,3 +34,4 @@ cosign verify --key awskms:///arn:aws:kms:us-east-1:123456789:key/corporate-sign
 
 > [!NOTE]
 > Audit logs for all deployments are retained for 365 days and ingested into the LogPulse audit pipeline for quarterly compliance reviews.
+

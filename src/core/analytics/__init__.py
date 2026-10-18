@@ -1,4 +1,3 @@
-"""LogPulse Log Audit & Analytics Engine package."""
 from .models import LogRecord, HourlyMetric, AuditSummary
 from .pure_functions import (
     compose,

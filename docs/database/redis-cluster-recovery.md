@@ -45,3 +45,4 @@ If a shard is permanently lost without backup replicas:
 # Reallocate orphaned slots to surviving masters
 redis-cli --cluster fix 10.0.12.10:6379
 ```
+

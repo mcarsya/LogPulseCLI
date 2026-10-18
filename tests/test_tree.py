@@ -1,7 +1,3 @@
-"""
-Unit Tests for N-Ary Tree Data Structure & BFS/DFS Traversal Algorithms.
-"""
-
 import unittest
 from pathlib import Path
 from src.core.ssg.models import Document, DocumentMetadata
@@ -9,7 +5,6 @@ from src.core.ssg.tree import DocTree, DocTreeNode
 
 
 class TestDocTree(unittest.TestCase):
-
     def setUp(self):
         self.tree = DocTree(root_title="Enterprise Test KB")
         self.doc1 = Document(
@@ -61,7 +56,6 @@ class TestDocTree(unittest.TestCase):
         self.assertEqual(root_level, 0)
         self.assertEqual(root_node.name, "root")
 
-        # Level 1 should be directories
         level1_names = [node.name for lvl, node in levels if lvl == 1]
         self.assertIn("devops", level1_names)
         self.assertIn("database", level1_names)
@@ -70,7 +64,7 @@ class TestDocTree(unittest.TestCase):
         node = self.tree.insert(self.doc1.relative_path, self.doc1)
         crumbs = self.tree.build_breadcrumbs(node)
 
-        self.assertEqual(len(crumbs), 3)  # Home -> Devops -> Kubernetes SOP
+        self.assertEqual(len(crumbs), 3)
         self.assertEqual(crumbs[0].title, "Home")
         self.assertEqual(crumbs[1].title, "Devops")
         self.assertEqual(crumbs[2].title, "Kubernetes SOP")

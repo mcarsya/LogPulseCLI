@@ -1,7 +1,3 @@
-"""
-Unit Tests for Functional Programming Analytics (Pure Functions, Map, Filter, Reduce).
-"""
-
 import unittest
 from src.core.analytics.pure_functions import (
     compose,
@@ -9,28 +5,21 @@ from src.core.analytics.pure_functions import (
     parse_log_line,
     is_error,
     is_warning,
-    is_level,
     is_status_range,
-    extract_client_ip,
 )
 from src.core.analytics.aggregators import (
     aggregate_frequencies,
     compute_top_k,
     compute_percentile,
-    build_audit_summary,
 )
 
 
 class TestFunctionalAnalytics(unittest.TestCase):
-
     def test_function_composition_and_pipe(self):
         add_two = lambda x: x + 2
         double = lambda x: x * 2
 
-        # pipe(3, add_two, double) == (3 + 2) * 2 == 10
         self.assertEqual(pipe(3, add_two, double), 10)
-
-        # compose(double, add_two)(3) == (3 + 2) * 2 == 10
         self.assertEqual(compose(double, add_two)(3), 10)
 
     def test_pure_parse_log_line(self):

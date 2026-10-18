@@ -1,8 +1,3 @@
-"""
-LogPulse CLI - Analytics Immutable Models (Functional Programming)
-Uses frozen dataclasses to guarantee immutability across analytical pipelines.
-"""
-
 from __future__ import annotations
 
 import datetime
@@ -12,7 +7,6 @@ from typing import Optional, Tuple
 
 @dataclass(frozen=True)
 class LogRecord:
-    """Immutable representation of a single parsed log event."""
     timestamp: str
     datetime_val: Optional[datetime.datetime]
     level: str
@@ -35,8 +29,7 @@ class LogRecord:
 
 @dataclass(frozen=True)
 class HourlyMetric:
-    """Immutable hourly aggregate metrics."""
-    hour_key: str  # e.g. "2026-10-18 14:00"
+    hour_key: str
     total_requests: int
     error_count: int
     warning_count: int
@@ -46,7 +39,6 @@ class HourlyMetric:
 
 @dataclass(frozen=True)
 class AuditSummary:
-    """Immutable final audit report aggregation."""
     total_records: int
     info_count: int
     warning_count: int

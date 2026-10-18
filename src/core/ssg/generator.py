@@ -1,9 +1,3 @@
-"""
-LogPulse CLI - Static Site Generator (SSG Orchestrator)
-Orchestrates document parsing, Tree/Graph synthesis, breadcrumb resolution,
-and output artifact generation.
-"""
-
 from __future__ import annotations
 
 import shutil
@@ -28,10 +22,6 @@ class BuildResult:
 
 
 class StaticSiteGenerator:
-    """
-    Enterprise-scale Static Site Generator using OOP architecture.
-    """
-
     def __init__(
         self,
         docs_dir: str | Path,
@@ -51,31 +41,25 @@ class StaticSiteGenerator:
         self.tree = DocTree(root_title="LogPulse Enterprise Portal")
 
     def build(self) -> BuildResult:
-        """Executes complete SSG pipeline."""
         start_time = time.perf_counter()
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        # 1. Discover all markdown files
         md_files = sorted(list(self.docs_dir.rglob("*.md")))
         if not md_files:
             raise FileNotFoundError(f"No markdown documents found in {self.docs_dir}")
 
         documents: List[Document] = []
-
-        # 2. Parse documents and populate N-ary DocTree
         for file_path in md_files:
             doc = self.parser.parse_file(file_path, self.docs_dir)
             documents.append(doc)
             self.tree.insert(doc.relative_path, doc)
 
-        # 3. Apply Tree Algorithms: Link next/prev chain & build breadcrumbs
         self.tree.link_sequential_documents()
         for doc in documents:
             node = self.tree.find_by_slug(doc.slug)
             if node:
                 doc.breadcrumbs = self.tree.build_breadcrumbs(node)
 
-        # 4. Render Document HTML Pages
         generated_files: List[Path] = []
         for doc in documents:
             html = self.renderer.render_document(doc, self.tree)
@@ -84,13 +68,11 @@ class StaticSiteGenerator:
             target_file.write_text(html, encoding="utf-8")
             generated_files.append(target_file)
 
-        # 5. Render Tree-based Sitemap Page
         sitemap_html = self.renderer.render_sitemap(self.tree)
         sitemap_file = self.output_dir / "sitemap.html"
         sitemap_file.write_text(sitemap_html, encoding="utf-8")
         generated_files.append(sitemap_file)
 
-        # 6. Copy static styling & scripts
         assets_src = self.templates_dir / "assets"
         assets_dst = self.output_dir / "assets"
         if assets_src.exists():

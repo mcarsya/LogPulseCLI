@@ -1,17 +1,11 @@
-"""
-Unit Tests for C Bridge & Fallback Architecture.
-"""
-
 import unittest
 from pathlib import Path
-from src.core.c_bridge import CBridge, NativeLogStats, bridge
+from src.core.c_bridge import NativeLogStats, bridge
 
 
 class TestCBridge(unittest.TestCase):
-
     def test_singleton_bridge_instance(self):
         self.assertIsNotNone(bridge)
-        # Even if not compiled, is_available is a boolean
         self.assertIsInstance(bridge.is_available, bool)
 
     def test_python_fallback_execution(self):

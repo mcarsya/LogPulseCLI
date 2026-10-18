@@ -1,8 +1,3 @@
-"""
-LogPulse CLI - SSG Template Renderer
-Handles Jinja2 environment configuration, custom filters, and template evaluation.
-"""
-
 from __future__ import annotations
 
 import datetime
@@ -20,7 +15,6 @@ from .tree import DocTree
 
 
 def status_badge_filter(status: str) -> str:
-    """Renders a colorful status badge HTML snippet."""
     status_lower = (status or "active").lower()
     color_map = {
         "active": "badge-success",
@@ -35,15 +29,12 @@ def status_badge_filter(status: str) -> str:
 
 
 def date_format_filter(val: str) -> str:
-    """Formats date string nicely."""
     if not val:
         return datetime.date.today().strftime("%B %d, %Y")
     return val
 
 
 class TemplateRenderer:
-    """OOP renderer for documentation and audit portals."""
-
     def __init__(self, templates_dir: Path):
         self.templates_dir = Path(templates_dir)
         if HAS_JINJA:
@@ -57,7 +48,6 @@ class TemplateRenderer:
             self.env = None
 
     def render_document(self, document: Document, tree: DocTree) -> str:
-        """Renders an individual SOP/Runbook document page."""
         nav_tree = tree.to_nav_tree(current_slug=document.slug)
         context = {
             "doc": document,
@@ -74,11 +64,9 @@ class TemplateRenderer:
         if self.env:
             template = self.env.get_template("ssg/doc.html")
             return template.render(**context)
-        else:
-            return self._fallback_render_doc(context)
+        return self._fallback_render_doc(context)
 
     def render_sitemap(self, tree: DocTree) -> str:
-        """Renders comprehensive tree-based sitemap page."""
         nav_tree = tree.to_nav_tree()
         docs = tree.get_document_sequence()
         context = {
@@ -92,8 +80,7 @@ class TemplateRenderer:
         if self.env:
             template = self.env.get_template("ssg/sitemap.html")
             return template.render(**context)
-        else:
-            return self._fallback_render_sitemap(context)
+        return self._fallback_render_sitemap(context)
 
     def _fallback_render_doc(self, ctx: Dict[str, Any]) -> str:
         doc: Document = ctx["doc"]
