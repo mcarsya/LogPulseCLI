@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}LogPulse Enterprise Portal{% endblock %}</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="index.html" class="brand">
+          <div class="brand-icon">⚡</div>
+          <span>LogPulse</span>
+          <span class="brand-tag">SOP Portal</span>
+        </a>
+      </div>
+
+      <div class="sidebar-search">
+        <input type="text" id="sidebarSearch" class="search-input" placeholder="Quick search SOPs...">
+      </div>
+
+      <ul class="nav-menu">
+        <li class="nav-item">
+          <a href="index.html" class="nav-link {% if doc and doc.slug in ('index', 'home') %}active{% endif %}">
+            <span>🏠 Home Portal</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="sitemap.html" class="nav-link">
+            <span>🗺️ Sitemap & Hierarchy</span>
+          </a>
+        </li>
+
+        {% macro render_tree(items) %}
+          {% for item in items %}
+            {% if item.is_directory %}
+              <li class="nav-category">
+                <span>📁</span>
+                <span>{{ item.title }}</span>
+              </li>
+              {% if item.children %}
+                <ul class="nav-sub">
+                  {{ render_tree(item.children) }}
+                </ul>
+              {% endif %}
+            {% else %}
+              <li class="nav-item">
+                <a href="{{ item.url }}" class="nav-link {% if item.is_active %}active{% endif %}">
+                  <span>📄</span>
+                  <span>{{ item.title }}</span>
+                </a>
+              </li>
+            {% endif %}
+          {% endfor %}
+        {% endmacro %}
+
+        {{ render_tree(nav_tree) }}
+      </ul>
+    </aside>
+
+    <!-- Main Content Body -->
+    <main class="main-content">
+      {% block content %}{% endblock %}
+
+      <footer class="site-footer">
+        <p>LogPulse Enterprise Knowledge Portal &copy; {{ year }}. Built with Python, C & Functional Programming.</p>
+      </footer>
+    </main>
+  </div>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>

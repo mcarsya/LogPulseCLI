@@ -1,0 +1,77 @@
+{% extends "ssg/base.html" %}
+
+{% block title %}{{ meta.title }} - LogPulse SOP{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation -->
+<nav class="breadcrumbs" aria-label="breadcrumb">
+  {% for crumb in breadcrumbs %}
+    {% if not loop.first %}
+      <span class="breadcrumb-separator">/</span>
+    {% endif %}
+    {% if crumb.is_current %}
+      <span class="current-crumb">{{ crumb.title }}</span>
+    {% else %}
+      <a href="{{ crumb.url }}">{{ crumb.title }}</a>
+    {% endif %}
+  {% endfor %}
+</nav>
+
+<!-- Document Header Section -->
+<header class="doc-header">
+  <h1 class="doc-title">{{ meta.title }}</h1>
+  
+  <div class="meta-bar">
+    <div class="meta-item">
+      {{ meta.status | status_badge | safe }}
+    </div>
+    <div class="meta-item">
+      <span>👤 Author:</span>
+      <strong>{{ meta.author }}</strong>
+    </div>
+    <div class="meta-item">
+      <span>🏷️ Category:</span>
+      <strong>{{ meta.category }}</strong>
+    </div>
+    <div class="meta-item">
+      <span>🔖 Version:</span>
+      <code>v{{ meta.version }}</code>
+    </div>
+    <div class="meta-item">
+      <span>🕒 Read Time:</span>
+      <span>~{{ doc.reading_time_minutes }} min</span>
+    </div>
+    {% if meta.last_updated %}
+    <div class="meta-item">
+      <span>📅 Updated:</span>
+      <span>{{ meta.last_updated | date_format }}</span>
+    </div>
+    {% endif %}
+  </div>
+</header>
+
+<!-- Document Body Content -->
+<article class="prose">
+  {{ doc.html_content | safe }}
+</article>
+
+<!-- Sequential Pagination (Previous / Next) -->
+<nav class="doc-pagination">
+  <div>
+    {% if prev_doc %}
+      <a href="{{ prev_doc.output_filename }}" class="page-btn">
+        <span class="page-label">← Previous Document</span>
+        <span class="page-title">{{ prev_doc.metadata.title }}</span>
+      </a>
+    {% endif %}
+  </div>
+  <div>
+    {% if next_doc %}
+      <a href="{{ next_doc.output_filename }}" class="page-btn" style="text-align: right;">
+        <span class="page-label">Next Document →</span>
+        <span class="page-title">{{ next_doc.metadata.title }}</span>
+      </a>
+    {% endif %}
+  </div>
+</nav>
+{% endblock %}

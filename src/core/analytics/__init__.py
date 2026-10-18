@@ -1,0 +1,52 @@
+"""LogPulse Log Audit & Analytics Engine package."""
+from .models import LogRecord, HourlyMetric, AuditSummary
+from .pure_functions import (
+    compose,
+    pipe,
+    curry_2,
+    parse_log_line,
+    is_error,
+    is_warning,
+    is_level,
+    is_status_range,
+    extract_client_ip,
+    extract_endpoint,
+    extract_status_code,
+    extract_response_time,
+    extract_hour_key,
+)
+from .aggregators import (
+    frequency_reducer,
+    aggregate_frequencies,
+    compute_top_k,
+    compute_percentile,
+    aggregate_hourly_time_series,
+    build_audit_summary,
+)
+from .engine import LogAnalyticsEngine
+
+__all__ = [
+    "LogRecord",
+    "HourlyMetric",
+    "AuditSummary",
+    "compose",
+    "pipe",
+    "curry_2",
+    "parse_log_line",
+    "is_error",
+    "is_warning",
+    "is_level",
+    "is_status_range",
+    "extract_client_ip",
+    "extract_endpoint",
+    "extract_status_code",
+    "extract_response_time",
+    "extract_hour_key",
+    "frequency_reducer",
+    "aggregate_frequencies",
+    "compute_top_k",
+    "compute_percentile",
+    "aggregate_hourly_time_series",
+    "build_audit_summary",
+    "LogAnalyticsEngine",
+]

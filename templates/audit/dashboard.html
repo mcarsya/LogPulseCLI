@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LogPulse Audit Dashboard - {{ summary.scanned_file }}</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    body { display: block; background-color: #f1f5f9; }
+    .audit-wrapper { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+    .dashboard-header {
+      background: white;
+      padding: 28px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow);
+    }
+  </style>
+</head>
+<body>
+  <div class="audit-wrapper">
+    <!-- Header -->
+    <div class="dashboard-header">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+          <span style="font-size: 1.8rem;">⚡</span>
+          <h1 style="font-size: 1.75rem; font-weight: 800; color: #0f172a;">LogPulse Audit Dashboard</h1>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          Audit target: <code>{{ summary.scanned_file }}</code> | Generated: {{ generated_at }}
+        </p>
+      </div>
+      <div style="text-align: right;">
+        <span class="badge badge-info" style="font-size: 0.85rem; padding: 6px 12px;">
+          ⚙️ {{ summary.parsing_engine }}
+        </span>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">
+          Processed in <strong>{{ summary.execution_time_ms }} ms</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Metric Cards Grid -->
+    <div class="dashboard-grid">
+      <div class="kpi-card">
+        <div class="kpi-title">Total Records</div>
+        <div class="kpi-value">{{ "{:,}".format(summary.total_records) }}</div>
+        <div class="kpi-sub">Total lines scanned</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">Error Rate</div>
+        <div class="kpi-value" style="color: {% if summary.error_rate_percent > 5.0 %}var(--danger){% else %}var(--success){% endif %};">
+          {{ summary.error_rate_percent }}%
+        </div>
+        <div class="kpi-sub">{{ summary.error_count + summary.status_5xx }} error incidents</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">Peak Traffic Window</div>
+        <div class="kpi-value" style="font-size: 1.35rem; color: var(--primary);">
+          {{ summary.peak_hour }}
+        </div>
+        <div class="kpi-sub">{{ summary.peak_hour_requests }} reqs at peak</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">Average Latency</div>
+        <div class="kpi-value">{{ summary.avg_latency_ms }} ms</div>
+        <div class="kpi-sub">P95: <strong>{{ summary.p95_latency_ms }} ms</strong></div>
+      </div>
+    </div>
+
+    <!-- Status Code Breakdown Bar -->
+    <div class="status-bar-container">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 1.15rem; color: #0f172a;">HTTP Response Status Code Breakdown</h3>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">
+          2xx: {{ summary.status_2xx }} | 3xx: {{ summary.status_3xx }} | 4xx: {{ summary.status_4xx }} | 5xx: {{ summary.status_5xx }}
+        </span>
+      </div>
+
+      {% set s2 = summary.status_2xx %}
+      {% set s3 = summary.status_3xx %}
+      {% set s4 = summary.status_4xx %}
+      {% set s5 = summary.status_5xx %}
+      {% set total_st = s2 + s3 + s4 + s5 %}
+      
+      {% if total_st > 0 %}
+        {% set p2 = (s2 / total_st * 100) | round(1) %}
+        {% set p3 = (s3 / total_st * 100) | round(1) %}
+        {% set p4 = (s4 / total_st * 100) | round(1) %}
+        {% set p5 = (s5 / total_st * 100) | round(1) %}
+        <div class="stacked-bar">
+          {% if p2 > 0 %}<div class="bar-segment bg-2xx" style="width: {{ p2 }}%;">2xx ({{ p2 }}%)</div>{% endif %}
+          {% if p3 > 0 %}<div class="bar-segment bg-3xx" style="width: {{ p3 }}%;">3xx ({{ p3 }}%)</div>{% endif %}
+          {% if p4 > 0 %}<div class="bar-segment bg-4xx" style="width: {{ p4 }}%;">4xx ({{ p4 }}%)</div>{% endif %}
+          {% if p5 > 0 %}<div class="bar-segment bg-5xx" style="width: {{ p5 }}%;">5xx ({{ p5 }}%)</div>{% endif %}
+        </div>
+      {% else %}
+        <p style="margin-top: 10px; color: var(--text-muted);">No HTTP status codes captured.</p>
+      {% endif %}
+    </div>
+
+    <!-- Hourly Traffic Pattern Bar Chart (Pure CSS) -->
+    {% if summary.hourly_series %}
+    <div class="chart-container">
+      <h3 style="font-size: 1.15rem; color: #0f172a; margin-bottom: 4px;">Hourly Traffic & Error Distribution</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+        Visualizing request volume and error occurrence across timestamp intervals.
+      </p>
+
+      {% set max_req = summary.peak_hour_requests if summary.peak_hour_requests > 0 else 1 %}
+      <div class="chart-bars">
+        {% for hour in summary.hourly_series %}
+          {% set height_pct = ((hour.total_requests / max_req) * 100) | round(0) %}
+          <div class="chart-col">
+            <div class="chart-bar-fill" style="height: {{ [height_pct, 6] | max }}%;" title="{{ hour.hour_key }}: {{ hour.total_requests }} reqs ({{ hour.error_count }} errors)">
+            </div>
+            <div class="chart-label">{{ hour.hour_key[-5:] }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Top Analysis Tables Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 24px; margin-bottom: 30px;">
+      <!-- Top Endpoints -->
+      <div style="background: white; padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow);">
+        <h3 style="font-size: 1.1rem; color: #0f172a; margin-bottom: 14px;">🔥 Top 5 Most Requested Endpoints</h3>
+        <table class="prose" style="width: 100%; margin: 0; box-shadow: none;">
+          <thead>
+            <tr><th>Endpoint</th><th style="text-align: right;">Hits</th></tr>
+          </thead>
+          <tbody>
+            {% for ep, count in summary.top_endpoints %}
+            <tr>
+              <td><code>{{ ep }}</code></td>
+              <td style="text-align: right; font-weight: 700; color: var(--primary);">{{ count }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Top Client IPs -->
+      <div style="background: white; padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow);">
+        <h3 style="font-size: 1.1rem; color: #0f172a; margin-bottom: 14px;">🌐 Top 5 Client IP Addresses</h3>
+        <table class="prose" style="width: 100%; margin: 0; box-shadow: none;">
+          <thead>
+            <tr><th>Client IP</th><th style="text-align: right;">Requests</th></tr>
+          </thead>
+          <tbody>
+            {% for ip, count in summary.top_ips %}
+            <tr>
+              <td><code>{{ ip }}</code></td>
+              <td style="text-align: right; font-weight: 700; color: var(--primary);">{{ count }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Top Error Messages / Root Cause Table -->
+    {% if summary.top_errors %}
+    <div style="background: white; padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow);">
+      <h3 style="font-size: 1.1rem; color: var(--danger); margin-bottom: 14px;">⚠️ Top Error / Failure Signatures</h3>
+      <table class="prose" style="width: 100%; margin: 0; box-shadow: none;">
+        <thead>
+          <tr><th>Error Signature</th><th style="text-align: right;">Occurrences</th></tr>
+        </thead>
+        <tbody>
+          {% for err, count in summary.top_errors %}
+          <tr>
+            <td><code style="color: var(--danger); background: #fef2f2;">{{ err }}</code></td>
+            <td style="text-align: right; font-weight: 700; color: var(--danger);">{{ count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <footer class="site-footer">
+      <p>LogPulse CLI Audit Engine &copy; {{ year }}. Built with Functional Programming (pure functions, map, filter, reduce).</p>
+    </footer>
+  </div>
+</body>
+</html>
